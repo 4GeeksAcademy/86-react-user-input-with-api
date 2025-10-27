@@ -9,3 +9,6 @@
     import 'relative/path/to/stylesheet.scss';
 
 */
+.shopped {
+    text-decoration: line-through;
+}
