@@ -2,30 +2,23 @@ import React, { useState, useEffect, createRef } from "react";
 
 //create your first component
 const Home = () => {
-	const [groceries, setGroceries] = useState([
-		{ label: 'Apple', is_done: false },
-		{ label: 'Bananas', is_done: false },
-		{ label: 'Cantelop', is_done: false }])
+	const [groceries, setGroceries] = useState()
 	const [userInput, setUserInput] = useState("");
-	const [updatedValue, setUpdatedValue] = useState("");
-	// const [currentUser, setCurrentUser] = useState();
+	const [userEditInput, setUserEditInput] = useState("");
+	const [currentEdit, setCurrentEdit] = useState("");
 
 	useEffect(() => {
 		getUser()
-	}, [])
+	}, []) //empty dependancy array == run onload, and only onload
 
-	useEffect(() => {
-		console.log(groceries)
-	}, [groceries])
-
-	async function getUser() {
-		let getResponse = await fetch("https://playground.4geeks.com/todo/users/valerieclaire96")
-		let getData = await getResponse.json()
-		if (getData?.detail?.includes("doesn't exist")) {
-			createUser
+	async function getUser() { //get user also populates grocery list
+		let response = await fetch("https://playground.4geeks.com/todo/users/valerieclaire96")
+		let data = await response.json();
+		if (data.detail?.includes("doesn't exist")) {
+			createUser()
 		}
 		else {
-			setGroceries(getData.todos)
+			setGroceries(data.todos)
 		}
 	}
 	async function createUser() {
@@ -34,34 +27,57 @@ const Home = () => {
 			headers: { "Content-type": "application/json" },
 		})
 		let postData = await postResponse.json()
-		console.log(postData)
 	}
 
-	const addToList = (item, event) => {
+	const addToList = async (item, event) => {
 		//we will want to add a fetch request
 		if (event.key === "Enter" || event.type == "click") {
 			let groceryItem = { label: item, is_done: false }
 			//without the spread operator [[Apple, banana, cantelop], dragonfruit]
 			//with the spread operator [Apple, banana, cantelop, dragonfruit]
 
-			setGroceries([...groceries, groceryItem])
+			let response = await fetch('https://playground.4geeks.com/todo/todos/valerieclaire96', {
+				method: "POST",
+				headers: { "Content-type": "application/json" },
+				body: JSON.stringify(groceryItem)
+			});
+			let data = await response.json()
+			getUser();
 			setUserInput("")
 		}
 	}
-	const updateItem = (index) => {
-		let newList = []
-
-	}
 	const markItemAsShopped = (index) => {
-		let newList = groceries.map((grocery, i) => {
-			if (index == i) {
-				return { label: grocery['label'], is_done: !grocery['obtained'] };
-			}
-			else {
-				return grocery;
-			}
+		let newItem = { label: groceries[index].label, is_done: !groceries[index].is_done }
+		updateRequest(newItem, groceries[index].id)
+	}
+	const updateItem = (index) => {
+		let newItem = { label: userEditInput, is_done: groceries[index].is_done }
+		updateRequest(newItem, groceries[index].id)
+		setUserEditInput("");
+		setCurrentEdit("")
+	}
+	const updateRequest = async (grocery, id) => {
+		let response = await fetch("https://playground.4geeks.com/todo/todos/" + id, {
+			method: "PUT",
+			headers: { "Content-type": "application/json" },
+			body: JSON.stringify(grocery)
 		})
-		setGroceries(newList);
+		let data = await response.json()
+		getUser() //get user also updates the list
+	}
+	const toggleEdit = (id) => {
+		if (currentEdit == "") {
+			setCurrentEdit(id);
+		}
+		else {
+			setCurrentEdit("");
+		}
+	}
+	const deleteFromList = async (id) => {
+		let deleteResponse = await fetch('https://playground.4geeks.com/todo/todos/' + id, {
+			method: "DELETE"
+		})
+		getUser()
 	}
 	return (
 		//this is the html part of a react component
@@ -77,10 +93,21 @@ const Home = () => {
 			<button onClick={(e) => addToList(userInput, e)} >Add to List</button>
 			<ul>
 				{/* if we want to write js/dynamic code we must use {} */}
-				{groceries.map((grocery, index) => {
+				{groceries?.map((grocery, index) => {
 					return (
-						<li className={grocery.is_done ? "shopped" : ""} key={index}>{grocery.label}
-							<span onClick={() => markItemAsShopped(index)}>☑️</span>
+						<li className={grocery.is_done ? "shopped" : ""} key={grocery.id}>
+							{currentEdit == grocery.id ?
+								<span>
+									<input onChange={(e) => setUserEditInput(e.target.value)} />
+									<span onClick={() => updateItem(index)}>💾</span>
+								</span>
+								: 
+								<span>
+									{grocery.label}
+									<span onClick={() => markItemAsShopped(index)}>☑️</span>
+								</span>}
+							<span onClick={() => toggleEdit(grocery.id)}>✏️</span>
+							<span onClick={() => deleteFromList(grocery.id)}>🗑️</span>
 						</li>
 					)
 				})}
