@@ -107,7 +107,7 @@ const Home = () => {
 									<span onClick={() => markItemAsShopped(index)}>☑️</span>
 								</span>}
 							<span onClick={() => toggleEdit(grocery.id)}>✏️</span>
-							<span onClick={() => deleteFromList(grocery.id)}>🗑️</span>
+							<span className="deleteBtn" onClick={() => deleteFromList(grocery.id)}>🗑️</span>
 						</li>
 					)
 				})}

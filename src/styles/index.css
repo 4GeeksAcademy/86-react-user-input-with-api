@@ -12,3 +12,10 @@
 .shopped {
     text-decoration: line-through;
 }
+li .deleteBtn {
+  display: none;
+}
+
+li:hover .deleteBtn {
+  display: inline;
+}
